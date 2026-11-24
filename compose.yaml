@@ -1,0 +1,38 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: tp3-db
+    environment:
+      POSTGRES_DB: tp3db
+      POSTGRES_USER: tp3user
+      POSTGRES_PASSWORD: tp3pass
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tp3user -d tp3db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: ./api
+    container_name: tp3-backend
+    environment:
+      DATABASE_URL: postgres://tp3user:tp3pass@db:5432/tp3db
+      PORT: 3000
+    ports:
+      - "3000:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build: ./react-app
+    container_name: tp3-frontend
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
